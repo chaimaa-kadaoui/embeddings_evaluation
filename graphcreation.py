@@ -10,6 +10,7 @@ import sklearn.metrics.pairwise as smp
 from sklearn.preprocessing import minmax_scale
 plt.style.use('ggplot')
 
+
 def load_embeddings(file_name):
     data = pd.read_csv(file_name, sep='\t', header=None)
 
@@ -18,20 +19,12 @@ def load_embeddings(file_name):
     embeddings = minmax_scale(embeddings)
     return vocabulary, embeddings
 
-def get_similarity(embeddings, metric, sigma2=1):
-    similarity = dist.squareform(dist.pdist(embeddings, metric))
-    if metric == "cosine":
-        return 1 - similarity
-    elif metric == "sqeuclidean":
-        return np.exp(-(similarity)/(2*sigma2))
-    else:
-        return "Wrong metric"
 
 def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
 
     if metric == "cosine":
         metric = lambda x, y: smp.paired_cosine_distances(x.reshape(1, -1), y.reshape(1, -1))
-    elif metric == "sqeuclidean":
+    elif metric == "exp":
         metric = lambda x, y: np.exp((smp.paired_euclidean_distances(x.reshape(1, -1), y.reshape(1, -1))**2) / (2*metric_param2))
     else:
         return "Wrong metric"
@@ -48,6 +41,7 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
     adjacency[to_fill] = adjacency.T[to_fill]
     adjacency = adjacency.toarray()
     return adjacency
+
 
 def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
