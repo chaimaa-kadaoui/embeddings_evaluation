@@ -32,13 +32,17 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
     if graph_type == "knn":
         adjacency = neighbors.kneighbors_graph(embeddings, graph_param, metric=metric,
                                                mode='distance', include_self=True)
+        to_fill = ((adjacency == 0) * (adjacency.T != 0))
+        adjacency[to_fill] = adjacency.T[to_fill]
     elif graph_type == "eps":
         adjacency = neighbors.radius_neighbors_graph(embeddings, graph_param, metric=metric,
                                                mode='distance', include_self=True)
+    elif graph_type == 'lsh':
+        lshf = neighbors.LSHForest()
+        lshf.fit(embeddings)
+        adjacency = lshf.kneighbors_graph(embeddings, graph_param, mode='distance')
     else:
         return "Wrong parameters"
-    to_fill = ((adjacency == 0) * (adjacency.T != 0))
-    adjacency[to_fill] = adjacency.T[to_fill]
     adjacency = adjacency.toarray()
     return adjacency
 
