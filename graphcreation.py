@@ -44,7 +44,10 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
                                                mode='distance', include_self=True)
     else:
         return "Wrong parameters"
-    return adjacency.toarray()
+    to_fill = ((adjacency == 0) * (adjacency.T != 0))
+    adjacency[to_fill] = adjacency.T[to_fill]
+    adjacency = adjacency.toarray()
+    return adjacency
 
 def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
