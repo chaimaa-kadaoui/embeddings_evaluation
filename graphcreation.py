@@ -4,7 +4,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import scipy.spatial.distance as dist
 import sklearn.neighbors as neighbors
 import sklearn.metrics.pairwise as smp
 from sklearn.preprocessing import minmax_scale
