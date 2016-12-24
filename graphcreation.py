@@ -31,23 +31,27 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
 
     if graph_type == "knn":
         adjacency = neighbors.kneighbors_graph(embeddings, graph_param, metric=metric,
-                                               mode='distance', include_self=True)
+                                               mode='distance', include_self=True).toarray()
         to_fill = ((adjacency == 0) * (adjacency.T != 0))
         adjacency[to_fill] = adjacency.T[to_fill]
     elif graph_type == "eps":
         adjacency = neighbors.radius_neighbors_graph(embeddings, graph_param, metric=metric,
-                                               mode='distance', include_self=True)
-    elif graph_type == 'lsh':
+                                               mode='distance', include_self=True).toarray()
+    elif graph_type == 'lsh_knn':
         lshf = neighbors.LSHForest()
         lshf.fit(embeddings)
-        adjacency = lshf.kneighbors_graph(embeddings, graph_param, mode='distance')
+        adjacency = lshf.kneighbors_graph(embeddings, graph_param, mode='distance').toarray()
+        to_fill = ((adjacency == 0) * (adjacency.T != 0))
+        adjacency[to_fill] = adjacency.T[to_fill]
+    elif graph_type == 'lsh_eps':
+        lshf = neighbors.LSHForest()
+        lshf.fit(embeddings)
+        adjacency = lshf.radius_neighbors_graph(embeddings, graph_param, mode='distance').toarray()
     else:
         return "Wrong parameters"
-    adjacency = adjacency.toarray()
     return adjacency
 
 
 def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
-    nx.draw(graph)
     return graph
