@@ -12,7 +12,6 @@ plt.style.use('ggplot')
 
 def load_embeddings(file_name):
     data = pd.read_csv(file_name, sep='\t', header=None)
-
     vocabulary = list(data.iloc[:, 0])
     embeddings = data.iloc[:, 1:].values
     embeddings = minmax_scale(embeddings)
@@ -20,7 +19,6 @@ def load_embeddings(file_name):
 
 
 def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
-
     if metric == "cosine":
         metric = lambda x, y: smp.paired_cosine_distances(x.reshape(1, -1), y.reshape(1, -1))
     elif metric == "exp":
