@@ -1,12 +1,15 @@
 import graphcreation as gc
 import networkx as nx
+import community
 import numpy as np
 import pandas as pd
 from time import time
 from os import path
 import matplotlib.pyplot as plt
-plt.style.use("bmh")
+import matplotlib as mpl
 
+plt.style.use("bmh")
+mpl.rcParams['figure.figsize'] = (23.5, 11)
 
 def get_file_path(half_size, dim, emb_name):
     file_name = '_'.join([emb_name, 'window_half_size='+half_size, 'd='+dim])
@@ -36,7 +39,8 @@ def coefficients(graph, key, weights=None):
     # plt.close()
     return coeffs.mean()
 
-def plot_hist(all_coeffs):
+
+def plot_clustering(all_coeffs):
     names = ["GloVe", "HPCA", "Word2Vec"]
     pars = ["2_50", "2_200", "5_50", "5_200"]
     for i in range(4):
@@ -46,8 +50,54 @@ def plot_hist(all_coeffs):
         #     plt.plot(bins[:-1], values, '--', marker='o', linewidth=1, label=names[j])
         #     # plt.yscale('log', nonposy='clip')
         plt.title("Histogram of Clustering Coefficients with halfsize_dim="+pars[i], size=24)
+        plt.xlabel("Clustering coefficients", size=14)
+        plt.ylabel("Number of nodes", size=14)
         plt.legend()
         plt.savefig(path.join("results", "coeffs_" + pars[i] + ".png"), format="png")
+        plt.close()
+
+
+def community_detection(graph):
+    partition = community.best_partition(graph)
+    commu = np.array(list(partition.values()))
+    return commu, partition
+
+
+def community_evaluation(graph, partition):
+    partition = pd.Series(partition)
+    list_commus = partition.unique()
+    seq = []
+    for idx in list_commus:
+        part_i = partition[partition == idx].index
+        seq.append(list(part_i))
+    cov = nx.algorithms.community.quality.coverage(graph, seq)
+    perf = nx.algorithms.community.quality.performance(graph, seq)
+    return cov, perf
+
+
+def count_communities(commu):
+    cnt = pd.Series([])
+    histo = commu.value_counts()
+    for i in range(10):
+        check = (histo >= 100*i)&(histo < 100*(i+1))
+        if i == 9:
+            check = (histo >= 100*i)
+        cnt[100*i] = check.sum()
+    return cnt
+
+
+def plot_communities(all_commu):
+    names = ["GloVe", "HPCA", "Word2Vec"]
+    pars = ["2_50", "2_200", "5_50", "5_200"]
+    for i in range(4):
+        commu = all_commu.iloc[:, 3*i:3*(i+1)]
+        cnt = commu.apply(count_communities)
+        cnt.plot(kind="bar", label=names)
+        plt.title("Histogram of communities' size with halfsize_dim="+pars[i], size=24)
+        plt.xlabel("Number of words", size=18)
+        plt.ylabel("Number of communities", size=18)
+        plt.legend()
+        plt.savefig(path.join("results", "communities_" + pars[i] + ".png"), format="png")
         plt.close()
 
 
@@ -61,6 +111,7 @@ if __name__ == "__main__":
     graph_param = 5
 
     all_coeffs = pd.DataFrame([])
+    all_commu = pd.DataFrame([])
 
     for half_size in half_sizes:
         for dim in dims:
@@ -75,11 +126,18 @@ if __name__ == "__main__":
                 print("Number of connected components:", len(list(nx.connected_components(graph))))
                 # diam = diameter(graph)
                 # print(diam)
-                coeffs = coefficients(graph, key)
-                print(coeffs)
+                # coeffs = coefficients(graph, key)
+                # print(coeffs)
+                commu, partition = community_detection(graph)
+                print(commu.max())
+                cov, perf = community_evaluation(graph, partition)
+                print(cov, perf)
+                all_commu[key] = commu
         #         break
         #     break
         # break
 
-    all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
-    plot_hist(all_coeffs)
+    # all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
+    # plot_clustering(all_coeffs)
+    # all_commu.to_csv(path.join("results", "communities.csv"), index=False)
+    # plot_communities(all_commu)
