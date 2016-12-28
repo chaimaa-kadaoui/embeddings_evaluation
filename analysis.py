@@ -63,18 +63,6 @@ def community_detection(graph):
     return commu, partition
 
 
-def community_evaluation(graph, partition):
-    partition = pd.Series(partition)
-    list_commus = partition.unique()
-    seq = []
-    for idx in list_commus:
-        part_i = partition[partition == idx].index
-        seq.append(list(part_i))
-    cov = nx.algorithms.community.quality.coverage(graph, seq)
-    perf = nx.algorithms.community.quality.performance(graph, seq)
-    return cov, perf
-
-
 def count_communities(commu):
     cnt = pd.Series([])
     histo = commu.value_counts()
@@ -121,8 +109,11 @@ if __name__ == "__main__":
                 print(key)
                 file_path = get_file_path(half_size, dim, name)
                 voc, embs = gc.load_embeddings(file_path)
-                adj = gc.get_adjacency(embs, metric, graph_type, graph_param)
+                # adj = gc.get_adjacency(embs, metric, graph_type, graph_param)
+                adj = np.load(path.join("adjacencies", key+".npy"))
                 graph = gc.get_graph(adj)
+                labels = {idx: voc[idx] for idx in range(len(voc))}
+                graph = nx.relabel_nodes(graph, labels)
                 print("Number of connected components:", len(list(nx.connected_components(graph))))
                 # diam = diameter(graph)
                 # print(diam)
@@ -130,8 +121,7 @@ if __name__ == "__main__":
                 # print(coeffs)
                 commu, partition = community_detection(graph)
                 print(commu.max())
-                cov, perf = community_evaluation(graph, partition)
-                print(cov, perf)
+                print(community.modularity(partition, graph))
                 all_commu[key] = commu
         #         break
         #     break
