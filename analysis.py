@@ -12,6 +12,8 @@ plt.style.use("bmh")
 mpl.rcParams['figure.figsize'] = (23.5, 11)
 
 def get_file_path(half_size, dim, emb_name):
+    """Get the desired file_path for a specific embedding name and dimension and half_size"""
+
     file_name = '_'.join([emb_name, 'window_half_size='+half_size, 'd='+dim])
     file_ext = '.gz'
     if emb_name == 'GloVe':
@@ -21,26 +23,26 @@ def get_file_path(half_size, dim, emb_name):
 
 
 def diameter(graph):
+    """Returns the dimater of the graph, for more than 1 components, returns the maximum diameter"""
+
     graphs = list(nx.connected_component_subgraphs(graph))
     return max(list(map(nx.diameter, graphs)))
 
 
 def coefficients(graph, key, weights=None):
+    """Returns the clustering coefficients of the graph and updates the global DataFrame all_coeffs
+    We can use weights to compute the coefficients"""
+
     global all_coeffs
-    # weights = "weight"
     coeffs = nx.clustering(graph, weight=weights)
     coeffs = pd.Series(list(coeffs.values()))
     all_coeffs[key] = coeffs
-    # plt.hist(coeffs)
-    # plt.xlabel("Clustering coefficients", size=14)
-    # plt.ylabel("Number of nodes", size=14)
-    # plt.title("Histogram of clustering coefficients for "+key, size=18)
-    # plt.savefig(path.join("results", "coefficients_"+key+".png"), format="png")
-    # plt.close()
     return coeffs.mean()
 
 
 def plot_clustering(all_coeffs):
+    """"For each pair of dimension and half_size, plots the histogram of clustering coefficients for the 3 embeddings"""
+
     names = ["GloVe", "HPCA", "Word2Vec"]
     pars = ["2_50", "2_200", "5_50", "5_200"]
     for i in range(4):
@@ -58,15 +60,22 @@ def plot_clustering(all_coeffs):
 
 
 def community_detection(graph):
+    """Uses the library community to partition the graph into communities
+    The partitions are chosen so as to maximize the modularity of the graph
+    Returns the partition dictionary and its corresponding 1-d array"""
+
     partition = community.best_partition(graph)
     commu = np.array(list(partition.values()))
     return commu, partition
 
 
 def count_communities(commu):
+    """For a given embedding_dim_half_size, returns the histogram of the population of communities"""
+
     cnt = pd.Series([])
-    histo = commu.value_counts()
+    histo = commu.value_counts()  # An array with the population of each community
     for i in range(10):
+        # We compute how many communities have between 100*i and 100*(i+1) members
         check = (histo >= 100*i)&(histo < 100*(i+1))
         if i == 9:
             check = (histo >= 100*i)
@@ -75,6 +84,9 @@ def count_communities(commu):
 
 
 def plot_communities(all_commu):
+    """"For each pair of dimension and half_size, plots the histogram of communities' sizes for the 3 embeddings
+    We use the function "count_communities" defined above"""
+
     names = ["GloVe", "HPCA", "Word2Vec"]
     pars = ["2_50", "2_200", "5_50", "5_200"]
     for i in range(4):
@@ -94,38 +106,24 @@ if __name__ == "__main__":
     dims = ['50', '200']
     emb_names = ['GloVe', 'HPCA', 'Word2Vec']
 
-    metric = "cosine"
-    graph_type = "lsh_knn"
-    graph_param = 5
-
     all_coeffs = pd.DataFrame([])
     all_commu = pd.DataFrame([])
 
     for half_size in half_sizes:
         for dim in dims:
             for name in emb_names:
-                start = time()
                 key = '_'.join([name, half_size, dim])
                 print(key)
-                file_path = get_file_path(half_size, dim, name)
-                voc, embs = gc.load_embeddings(file_path)
-                # adj = gc.get_adjacency(embs, metric, graph_type, graph_param)
-                adj = np.load(path.join("adjacencies", key+".npy"))
-                graph = gc.get_graph(adj)
-                labels = {idx: voc[idx] for idx in range(len(voc))}
-                graph = nx.relabel_nodes(graph, labels)
+                graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
                 print("Number of connected components:", len(list(nx.connected_components(graph))))
                 # diam = diameter(graph)
                 # print(diam)
                 # coeffs = coefficients(graph, key)
                 # print(coeffs)
-                commu, partition = community_detection(graph)
-                print(commu.max())
-                print(community.modularity(partition, graph))
-                all_commu[key] = commu
-        #         break
-        #     break
-        # break
+                # commu, partition = community_detection(graph)
+                # print(commu.max())
+                # print(community.modularity(partition, graph))
+                # all_commu[key] = commu
 
     # all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
     # plot_clustering(all_coeffs)
