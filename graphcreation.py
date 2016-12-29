@@ -80,16 +80,15 @@ def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
     return graph
 
-dir='embeddings/Word2Vec'
-i = 1
-for filename in [dir+'/Word2Vec_window_half_size=2_d=50.gz', dir+'/Word2Vec_window_half_size=2_d=200.gz',
-                  dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
-    [voc, emb] = load_embeddings(filename)
-    debut = time.time()
-    W = get_adjacency(emb, "cosine", "eps", "opt")
-    fin = time.time()
-    t = fin - debut
-    np.savetxt('opt_eps_' + str(i), W)
-    print("Done for ", filename, " in ", t)
-    i += 1
-b
+# dir='embeddings/Word2Vec'
+# i = 1
+# for filename in [dir+'/Word2Vec_window_half_size=2_d=50.gz', dir+'/Word2Vec_window_half_size=2_d=200.gz',
+#                   dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
+#     [voc, emb] = load_embeddings(filename)
+#     debut = time.time()
+#     W = get_adjacency(emb, "cosine", "eps", "opt")
+#     fin = time.time()
+#     t = fin - debut
+#     np.savetxt('opt_eps_' + str(i), W)
+#     print("Done for ", filename, " in ", t)
+#     i += 1

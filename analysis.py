@@ -1,6 +1,6 @@
-#import graphcreation as gc
+import graphcreation as gc
 import networkx as nx
-#import community
+import community
 import numpy as np
 import pandas as pd
 from time import time
