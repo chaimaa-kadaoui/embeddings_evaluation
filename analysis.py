@@ -46,11 +46,7 @@ def plot_clustering(all_coeffs):
     names = ["GloVe", "HPCA", "Word2Vec"]
     pars = ["2_50", "2_200", "5_50", "5_200"]
     for i in range(4):
-        n, bins, patches = plt.hist(all_coeffs.iloc[:, 3*i:3*(i+1)].values, normed=True, label=names)
-        # plt.close()
-        # for j, values in enumerate(n):
-        #     plt.plot(bins[:-1], values, '--', marker='o', linewidth=1, label=names[j])
-        #     # plt.yscale('log', nonposy='clip')
+        plt.hist(all_coeffs.iloc[:, 3*i:3*(i+1)].values, label=names)
         plt.title("Histogram of Clustering Coefficients with halfsize_dim="+pars[i], size=24)
         plt.xlabel("Clustering coefficients", size=14)
         plt.ylabel("Number of nodes", size=14)
@@ -101,6 +97,30 @@ def plot_communities(all_commu):
         plt.close()
 
 
+def plot_results(results, col_idx, ylabel, ylim):
+    """Plots a specific column of the results"""
+
+    all_colors = [parameter['color'] for parameter in plt.rcParams['axes.prop_cycle']]
+    names = ["GloVe", "HPCA", "Word2Vec"]
+    pars = ["2_50", "2_200", "5_50", "5_200"]
+    width = 0.1
+    fig, ax = plt.subplots()
+    ind = np.arange(len(names))
+
+    for i in range(len(pars)):
+        vals = list(results.iloc[3 * i:3 * (i + 1), col_idx])
+        ax.bar(ind+width*i, vals, width, color=all_colors[i], label=pars[i])
+
+    plt.xlabel('Embeddings')
+    plt.ylabel(ylabel)
+    plt.title(ylabel+' of embeddings')
+    plt.ylim(ylim)
+    plt.xticks(ind + 2*width, names)
+    plt.legend(loc="lower right", framealpha=0.5)
+    plt.tight_layout()
+    plt.show()
+
+
 if __name__ == "__main__":
     half_sizes = ['2', '5']
     dims = ['50', '200']
@@ -108,6 +128,7 @@ if __name__ == "__main__":
 
     all_coeffs = pd.DataFrame([])
     all_commu = pd.DataFrame([])
+    results = pd.DataFrame([])
 
     for half_size in half_sizes:
         for dim in dims:
@@ -115,17 +136,19 @@ if __name__ == "__main__":
                 key = '_'.join([name, half_size, dim])
                 print(key)
                 graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
-                print("Number of connected components:", len(list(nx.connected_components(graph))))
-                # diam = diameter(graph)
-                # print(diam)
-                # coeffs = coefficients(graph, key)
-                # print(coeffs)
-                # commu, partition = community_detection(graph)
-                # print(commu.max())
-                # print(community.modularity(partition, graph))
-                # all_commu[key] = commu
-
-    # all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
-    # plot_clustering(all_coeffs)
-    # all_commu.to_csv(path.join("results", "communities.csv"), index=False)
-    # plot_communities(all_commu)
+                nb_comp = len(list(nx.connected_components(graph)))
+                results.loc[key, "nb_comp"] = nb_comp
+                diam = diameter(graph)
+                results.loc[key, "diameter"] = diam
+                coeffs = coefficients(graph, key)
+                results.loc[key, "clustering_coeff"] = coeffs
+                commu, partition = community_detection(graph)
+                modularity = community.modularity(partition, graph)
+                results.loc[key, "nb_communities"] = commu.max()
+                results.loc[key, "modularity"] = modularity
+                all_commu[key] = commu
+                results.to_csv(path.join("results", "results.csv"))
+                all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
+                all_commu.to_csv(path.join("results", "communities.csv"), index=False)
+    plot_clustering(all_coeffs)
+    plot_communities(all_commu)
