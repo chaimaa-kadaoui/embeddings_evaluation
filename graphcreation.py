@@ -67,6 +67,9 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
     elif graph_type == 'lsh_eps':
         lshf = neighbors.LSHForest()
         lshf.fit(embeddings)
+        if graph_param == "opt":
+            # Choosing epsilon such that the graph is safely connected
+            graph_param = opt_epsilon(embeddings, metric, metric_param2)
         adjacency = lshf.radius_neighbors_graph(embeddings, graph_param, mode='distance').toarray()
     else:
         return "Wrong parameters"
@@ -76,3 +79,16 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
 def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
     return graph
+
+# dir='embeddings/Word2Vec'
+# i = 1
+# for filename in [dir+'/Word2Vec_window_half_size=2_d=50.gz', dir+'/Word2Vec_window_half_size=2_d=200.gz',
+#                   dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
+#     [voc, emb] = load_embeddings(filename)
+#     debut = time.time()
+#     W = get_adjacency(emb, "cosine", "eps", "opt")
+#     fin = time.time()
+#     t = fin - debut
+#     np.savetxt('opt_eps_' + str(i), W)
+#     print("Done for ", filename, " in ", t)
+#     i += 1
