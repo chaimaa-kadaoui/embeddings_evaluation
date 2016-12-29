@@ -1,15 +1,17 @@
-import graphcreation as gc
+#import graphcreation as gc
 import networkx as nx
-import community
+#import community
 import numpy as np
 import pandas as pd
 from time import time
 from os import path
 import matplotlib.pyplot as plt
 import matplotlib as mpl
+import collections
 
 plt.style.use("bmh")
 mpl.rcParams['figure.figsize'] = (23.5, 11)
+
 
 def get_file_path(half_size, dim, emb_name):
     file_name = '_'.join([emb_name, 'window_half_size='+half_size, 'd='+dim])
@@ -18,6 +20,35 @@ def get_file_path(half_size, dim, emb_name):
         file_ext = '.txt'+file_ext
     file_path = path.join('embeddings', emb_name, file_name+file_ext)
     return file_path
+
+
+def degree_histogram(G, normed=True):
+    """
+    Generating degree histogram with the mean
+    """
+    # Sorting degrees in descending order
+    degree_seq = sorted([d for n, d in G.degree().items()], reverse=True)
+
+    degree_count = collections.Counter(degree_seq)
+    deg, count = zip(*degree_count.items())
+    # If normed, the degrees frequencies are displayed instead of the counts
+    if normed:
+        count = tuple([c / G.number_of_nodes() for c in count])
+    # Computing the mean
+    mean_degree = np.asarray(deg).dot(np.asarray(count)) / sum(np.asarray(count))
+    # Generating the histogram
+    fig, ax = plt.subplots()
+    plt.bar(deg, count, width=0.8, color='b', alpha=0.4)
+    ax.axvline(mean_degree, color='b', linewidth=2, label='Mean: {:0.1f}'.format(mean_degree))
+    plt.title("Degree Histogram")
+    plt.ylabel("Count")
+    plt.xlabel("Degree")
+    ax.set_xticks([d + 0.4 for d in deg])
+    ax.set_xticklabels(deg)
+    ax.legend(loc='upper right')
+    plt.tight_layout()
+    #plt.savefig("degree_histogram.png")
+    plt.show()
 
 
 def diameter(graph):
