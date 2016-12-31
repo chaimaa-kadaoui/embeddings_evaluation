@@ -1,0 +1,58 @@
+#####################
+# Evaluation report #
+#####################
+Word embeddings' legend:
+    word embeddings n° 0: label = 'Word2Vec_window_half_size=2_d=200.gz'
+ 
+###########
+# Analogy #
+###########
+Analogy evaluation's hyperparameters:
+    analogy computation type = 'cosmul'
+    good if correct answer is within 'K' first fetched values: K = 1
+ 
+legend:
+    data infos: x, y <=> file questions total number, file vocabulary size
+    word embedding stats: x% (y%, z%) <=> precision (questions coverage, vocabulary coverage)
+------------------------------------------------------------------------------
+| 'semantic' analogy filename(s)   | data infos | word embeddings n°0        |
+------------------------------------------------------------------------------
+| capital-common-countries.txt     |   506,  46 |  88.68% ( 75.10%,  93.48%) |
+| capital-world.txt                |  4524, 232 |  86.23% ( 12.36%,  56.90%) |
+| city-in-state.txt                |  2467,  94 |  55.40% ( 40.17%,  74.47%) |
+| currency.txt                     |   866,  58 |   0.00% (  3.23%,  60.34%) |
+| family.txt                       |   506,  46 |  82.86% ( 41.50%,  71.74%) |
+------------------------------------------------------------------------------
+| total micro-average ('semantic') |  8869, nan |  71.13% ( 24.44%,    nan%) |
+| total macro-average ('semantic') |  1774,  95 |  62.63% ( 34.47%,  71.39%) |
+------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+| 'syntactic' analogy filename(s)   | data infos | word embeddings n°0        |
+-------------------------------------------------------------------------------
+| gram1-adjective-to-adverb.txt     |   992,  64 |  18.38% ( 27.42%,  68.75%) |
+| gram2-opposite.txt                |   812,  58 |  36.67% (  3.69%,  50.00%) |
+| gram3-comparative.txt             |  1332,  74 |  66.08% ( 25.68%,  75.68%) |
+| gram4-superlative.txt             |  1122,  68 |  51.10% ( 16.22%,  67.65%) |
+| gram5-present-participle.txt      |  1056,  66 |  44.76% ( 39.77%,  72.73%) |
+| gram6-nationality-adjective.txt   |  1599,  82 |  78.64% ( 72.61%,  91.46%) |
+| gram7-past-tense.txt              |  1560,  80 |  47.38% ( 41.67%,  77.50%) |
+| gram8-plural.txt                  |  1332,  74 |  49.60% ( 37.99%,  70.27%) |
+| gram9-plural-verbs.txt            |   870,  60 |  52.21% ( 31.26%,  71.67%) |
+-------------------------------------------------------------------------------
+| total micro-average ('syntactic') | 10675, nan |  56.90% ( 35.93%,    nan%) |
+| total macro-average ('syntactic') |  1186,  70 |  49.43% ( 32.92%,  71.74%) |
+-------------------------------------------------------------------------------
+ 
+##############
+# Similarity #
+##############
+legend:
+    data infos: x, y <=> file questions total number, file vocabulary size
+    word embedding stats: x, y (z%, a%) <=> pearson's score, spearman's score  (questions coverage, vocabulary coverage)
+---------------------------------------------------------------------------
+| similarity filename(s) | data infos | word embeddings n°0               |
+---------------------------------------------------------------------------
+| rareword.txt           | 2034, 2951 | +0.546, +0.564 (  6.93%,  27.96%) |
+| rg65.txt               |   65,   48 | +0.764, +0.765 ( 46.15%,  62.50%) |
+| wordsim353.txt         |  353,  437 | +0.602, +0.628 ( 73.37%,  82.84%) |
+---------------------------------------------------------------------------
