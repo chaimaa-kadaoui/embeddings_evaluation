@@ -3,11 +3,11 @@ import networkx as nx
 import community
 import numpy as np
 import pandas as pd
-from time import time
 from os import path
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import collections
+import csv
 
 plt.style.use("bmh")
 mpl.rcParams['figure.figsize'] = (23.5, 11)
@@ -24,13 +24,12 @@ def get_file_path(half_size, dim, emb_name):
     return file_path
 
 
-def degree_histogram(G, normed=True):
+def degree_histogram(G, filename, normed):
     """
-    Generating degree histogram with the mean
+    Generates degree histogram with the mean
     """
-    # Sorting degrees in descending order
+    # Sorting degrees in descending order and counting
     degree_seq = sorted([d for n, d in G.degree().items()], reverse=True)
-
     degree_count = collections.Counter(degree_seq)
     deg, count = zip(*degree_count.items())
     # If normed, the degrees frequencies are displayed instead of the counts
@@ -49,8 +48,106 @@ def degree_histogram(G, normed=True):
     ax.set_xticklabels(deg)
     ax.legend(loc='upper right')
     plt.tight_layout()
-    #plt.savefig("degree_histogram.png")
-    plt.show()
+    plt.savefig("degree_histogram_" + filename + ".png")
+
+
+def degree_log_log(list_graphs, list_keys, half_size, dim, cdf):
+    """
+    Plots the degree distribution for each graph in 'list_graphs' with a log-log
+    scale on the same figure. If 'cdf' is True, the cumulative function distribution
+    is plotted.
+    """
+    plt.figure()
+    plt.ylabel("Log probability")
+    plt.xlabel("Log degree")
+    i = 0
+    for graph in list_graphs:
+        # Sorting degrees in descending order and counting
+        degree_seq = sorted([d for n, d in graph.degree().items()], reverse=True)
+        degree_count = collections.Counter(degree_seq)
+        deg, count = zip(*degree_count.items())
+        # Computing the degrees frequencies
+        count = np.array([c / graph.number_of_nodes() for c in count])
+        deg = np.asarray(deg)
+        sorted_indexes = np.argsort(deg)
+        count = count[sorted_indexes]
+        # If cdf, the cumulative distribution function is displayed
+        if cdf:
+            # Cumulative distribution function computation
+            cdf_values = np.cumsum(count[::-1])[::-1]
+            plt.plot(np.log(deg[sorted_indexes]), np.log(cdf_values), label=list_keys[i])
+            plt.title("Cumulative degree distribution in log-log scale")
+            keyword = 'cdf'
+        # If not cdf, the distribution is displayed
+        else:
+            plt.plot(np.log(deg[sorted_indexes]), np.log(count), label=list_keys[i])
+            plt.title("Degree distribution in log-log scale")
+            keyword = 'distrib'
+        i += 1
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig("degree_" + keyword + "_loglog_" + half_size + '_' + dim + ".png")
+
+
+def degree_analysis(half_sizes, dims, emb_names, dir):
+    """
+    Analysis of the degree distribution: calls function 'degree_histogram'
+    and 'degree_log_log' on each graph
+    """
+    for half_size in half_sizes:
+        for dim in dims:
+            list_graphs, list_keys = [], []
+            for name in emb_names:
+                key = '_'.join([name, half_size, dim]) + '.graphml'
+                key = '/'.join([dir, key])
+                print(key)
+                list_keys.append(key)
+                # Reading the graph
+                graph = nx.read_graphml(key)
+                list_graphs.append(graph)
+                filename = (key.rsplit('/', 1)[-1]).rsplit('.', 1)[0]
+                # Creation of the histogram
+                degree_histogram(graph, filename, normed=True)
+            print(list_keys)
+            # Creation of the log-log plots for the 3 graphs corresponding
+            # to the same half size and dimension
+            degree_log_log(list_graphs, list_keys, half_size, dim, cdf=True)
+
+
+def centrality_degree(G, nb_nodes):
+    """
+    Finds (at least) the 'nb_nodes' most central nodes using the degree
+    """
+    # Sorting the degree sequence and finding the 'nb_nodes' largest values
+    degree_seq = sorted([d for n, d in G.degree().items()], reverse=True)
+    max_degrees = degree_seq[0:nb_nodes]
+    # Finding the nodes corresponding to these max degrees
+    central_nodes = [(n, int(d)) for n, d in G.degree().items() if d in max_degrees]
+    return central_nodes
+
+
+def centrality_analysis(half_sizes, dims, emb_names, dir):
+    """
+    Analysis of the centrality in all graphs
+    """
+    for half_size in half_sizes:
+        for dim in dims:
+            for name in emb_names:
+                key = '_'.join([name, half_size, dim]) + '.graphml'
+                key = '/'.join([dir, key])
+                print(key)
+                # Reading the graph
+                graph = nx.read_graphml(key)
+                key = (key.rsplit('/', 1)[-1]).rsplit('.', 1)[0]
+                # Finding (at least) the 'nb_nodes' most central nodes
+                nb_nodes = 10
+                central_nodes = centrality_degree(graph, nb_nodes)
+                # Writing results in a .csv file
+                with open('centrality_degree.csv', 'a') as result:
+                    result_csv = csv.writer(result)
+                    result_csv.writerow([key, ' '])
+                    for row in central_nodes:
+                        result_csv.writerow(row)
 
 
 def diameter(graph):
@@ -139,14 +236,18 @@ if __name__ == "__main__":
 
     all_coeffs = pd.DataFrame([])
     all_commu = pd.DataFrame([])
+    dir = 'graphs_lsh_opt_knn'
+    degree_analysis(half_sizes, dims, emb_names, dir)
+    centrality_analysis(half_sizes, dims, emb_names, dir)
 
     for half_size in half_sizes:
         for dim in dims:
             for name in emb_names:
-                key = '_'.join([name, half_size, dim])
-                print(key)
-                graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
-                print("Number of connected components:", len(list(nx.connected_components(graph))))
+                key = '_'.join([name, half_size, dim]) + '.graphml'
+                key = '/'.join([dir, key])
+                #print(key)
+                #graph = nx.read_graphml(path.join("graphs_lsh_opt_knn", key+".graphml"))
+                #print("Number of connected components:", len(list(nx.connected_components(graph))))
                 # diam = diameter(graph)
                 # print(diam)
                 # coeffs = coefficients(graph, key)
@@ -155,8 +256,7 @@ if __name__ == "__main__":
                 # print(commu.max())
                 # print(community.modularity(partition, graph))
                 # all_commu[key] = commu
-
-    # all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
-    # plot_clustering(all_coeffs)
-    # all_commu.to_csv(path.join("results", "communities.csv"), index=False)
-    # plot_communities(all_commu)
+    all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
+    plot_clustering(all_coeffs)
+    all_commu.to_csv(path.join("results", "communities.csv"), index=False)
+    plot_communities(all_commu)

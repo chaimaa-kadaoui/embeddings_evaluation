@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import sklearn.neighbors as neighbors
 import sklearn.metrics.pairwise as smp
 from sklearn.preprocessing import minmax_scale
-import time
 plt.style.use('ggplot')
 
 
@@ -80,15 +79,18 @@ def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
     return graph
 
-# dir='embeddings/Word2Vec'
-# i = 1
+# dir = 'embeddings/Word2Vec'
 # for filename in [dir+'/Word2Vec_window_half_size=2_d=50.gz', dir+'/Word2Vec_window_half_size=2_d=200.gz',
-#                   dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
+#                  dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
 #     [voc, emb] = load_embeddings(filename)
 #     debut = time.time()
-#     W = get_adjacency(emb, "cosine", "eps", "opt")
+#     k = int(np.floor(np.log(emb.shape[0])))
+#     #eps = np.percentile(smp.cosine_distances(emb), 25)
+#     graph = get_graph(get_adjacency(emb, "cosine", "lsh_knn", k))
+#     labels = {ind: voc[ind] for ind in range(len(voc))}
+#     graph = nx.relabel_nodes(graph, labels)
+#     nx.write_graphml(graph, filename + '_lsh_opt_knn.graphml')
 #     fin = time.time()
 #     t = fin - debut
-#     np.savetxt('opt_eps_' + str(i), W)
 #     print("Done for ", filename, " in ", t)
-#     i += 1
+#
