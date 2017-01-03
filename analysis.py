@@ -207,6 +207,28 @@ def count_communities(commu):
     return cnt
 
 
+def get_top_10(group):
+   top = group[["centrality", "words"]].sort_values("centrality", ascending=False)["words"]
+   top = list(top)[:10]
+   return top
+
+
+def top_words_community(graph, commus):
+    global top_words
+    # We would like to take only the 5 most crowded communities
+    counts = pd.get_dummies(commus).cumsum().iloc[-1, :].sort_values(ascending=False)
+    top_commus = list(counts.index)[:5]
+    commu_filtered = commus[commus.isin(top_commus)]
+    indexes = list(commu_filtered.index)  # The indexes of the nodes who belong to the top 5 communities
+    # We get the degree centrality of nodes
+    centrality = nx.algorithms.centrality.degree_centrality(graph)
+    words = np.array(list(centrality.keys()))[indexes]
+    centrality = np.array(list(centrality.values()))[indexes]
+    # We want to take the 10 most important words by community and store them in a list
+    df = pd.DataFrame([words, commu_filtered, centrality], index=["words", "community", "centrality"]).T
+    top_words[key] = df.groupby("community").apply(get_top_10).reset_index(drop=True)
+
+
 def plot_communities(all_commu):
     """"For each pair of dimension and half_size, plots the histogram of communities' sizes for the 3 embeddings
     We use the function "count_communities" defined above"""
@@ -249,6 +271,7 @@ def plot_results(results, col_idx, ylabel, ylim):
     plt.show()
 
 
+
 if __name__ == "__main__":
     half_sizes = ['2', '5']
     dims = ['50', '200']
@@ -260,13 +283,14 @@ if __name__ == "__main__":
     degree_analysis(half_sizes, dims, emb_names, dir)
     centrality_analysis(half_sizes, dims, emb_names, dir)
     results = pd.DataFrame([])
+    top_words = pd.DataFrame([])
 
     for half_size in half_sizes:
         for dim in dims:
             for name in emb_names:
                 key = '_'.join([name, half_size, dim])
                 print(key)
-                graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
+                graph = nx.read_graphml(path.join("graphs_lsh_opt_knn", key+".graphml"))
                 nb_comp = len(list(nx.connected_components(graph)))
                 results.loc[key, "nb_comp"] = nb_comp
                 diam = diameter(graph)
@@ -278,8 +302,10 @@ if __name__ == "__main__":
                 results.loc[key, "nb_communities"] = commu.max()
                 results.loc[key, "modularity"] = modularity
                 all_commu[key] = commu
+                top_words_community(graph, all_commu[key])
                 results.to_csv(path.join("results", "results.csv"))
                 all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
                 all_commu.to_csv(path.join("results", "communities.csv"), index=False)
+                top_words.to_csv(path.join("results", "top_words.csv"), index=False)
     plot_clustering(all_coeffs)
     plot_communities(all_commu)
