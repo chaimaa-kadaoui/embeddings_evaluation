@@ -126,6 +126,19 @@ def centrality_degree(G, nb_nodes):
     return central_nodes
 
 
+def centrality_nx(G, nb_nodes, type):
+    if type == 'closeness':
+        scores = nx.closeness_centrality(G)
+    elif type == 'betweenness':
+        scores = nx.betweenness_centrality(G)
+    else:
+        print('Error: type must be "closeness" or "betweenness".')
+    sorted_scores = sorted([c for n, c in scores.items()], reverse=True)
+    max_scores = sorted_scores[0:nb_nodes]
+    central_nodes = [(n, c) for n, c in scores.items() if c in max_scores]
+    return central_nodes
+
+
 def centrality_analysis(half_sizes, dims, emb_names, dir):
     """
     Analysis of the centrality in all graphs
@@ -141,9 +154,18 @@ def centrality_analysis(half_sizes, dims, emb_names, dir):
                 key = (key.rsplit('/', 1)[-1]).rsplit('.', 1)[0]
                 # Finding (at least) the 'nb_nodes' most central nodes
                 nb_nodes = 10
-                central_nodes = centrality_degree(graph, nb_nodes)
+                # central_nodes = centrality_degree(graph, nb_nodes)
+                # # Writing results in a .csv file
+                # with open('centrality_degree.csv', 'a') as result:
+                #     result_csv = csv.writer(result)
+                #     result_csv.writerow([key, ' '])
+                #     for row in central_nodes:
+                #         result_csv.writerow(row)
+                type = 'betweenness'
+                central_nodes = centrality_nx(graph, nb_nodes, type)
                 # Writing results in a .csv file
-                with open('centrality_degree.csv', 'a') as result:
+                filename = 'centrality_' + type + '.csv'
+                with open(filename, 'a') as result:
                     result_csv = csv.writer(result)
                     result_csv.writerow([key, ' '])
                     for row in central_nodes:
@@ -254,32 +276,32 @@ if __name__ == "__main__":
     dims = ['50', '200']
     emb_names = ['GloVe', 'HPCA', 'Word2Vec']
 
-    all_coeffs = pd.DataFrame([])
-    all_commu = pd.DataFrame([])
-    dir = 'graphs_lsh_opt_knn'
-    degree_analysis(half_sizes, dims, emb_names, dir)
+    # all_coeffs = pd.DataFrame([])
+    # all_commu = pd.DataFrame([])
+    dir = 'graphs_knn_5'
+    # degree_analysis(half_sizes, dims, emb_names, dir)
     centrality_analysis(half_sizes, dims, emb_names, dir)
-    results = pd.DataFrame([])
-
-    for half_size in half_sizes:
-        for dim in dims:
-            for name in emb_names:
-                key = '_'.join([name, half_size, dim])
-                print(key)
-                graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
-                nb_comp = len(list(nx.connected_components(graph)))
-                results.loc[key, "nb_comp"] = nb_comp
-                diam = diameter(graph)
-                results.loc[key, "diameter"] = diam
-                coeffs = coefficients(graph, key)
-                results.loc[key, "clustering_coeff"] = coeffs
-                commu, partition = community_detection(graph)
-                modularity = community.modularity(partition, graph)
-                results.loc[key, "nb_communities"] = commu.max()
-                results.loc[key, "modularity"] = modularity
-                all_commu[key] = commu
-                results.to_csv(path.join("results", "results.csv"))
-                all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
-                all_commu.to_csv(path.join("results", "communities.csv"), index=False)
-    plot_clustering(all_coeffs)
-    plot_communities(all_commu)
+    # results = pd.DataFrame([])
+    #
+    # for half_size in half_sizes:
+    #     for dim in dims:
+    #         for name in emb_names:
+    #             key = '_'.join([name, half_size, dim])
+    #             print(key)
+    #             graph = nx.read_graphml(path.join("graphs_knn_5", key+".graphml"))
+    #             nb_comp = len(list(nx.connected_components(graph)))
+    #             results.loc[key, "nb_comp"] = nb_comp
+    #             diam = diameter(graph)
+    #             results.loc[key, "diameter"] = diam
+    #             coeffs = coefficients(graph, key)
+    #             results.loc[key, "clustering_coeff"] = coeffs
+    #             commu, partition = community_detection(graph)
+    #             modularity = community.modularity(partition, graph)
+    #             results.loc[key, "nb_communities"] = commu.max()
+    #             results.loc[key, "modularity"] = modularity
+    #             all_commu[key] = commu
+    #             results.to_csv(path.join("results", "results.csv"))
+    #             all_coeffs.to_csv(path.join("results", "coefficients.csv"), index=False)
+    #             all_commu.to_csv(path.join("results", "communities.csv"), index=False)
+    # plot_clustering(all_coeffs)
+    # plot_communities(all_commu)

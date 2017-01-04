@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import sklearn.neighbors as neighbors
 import sklearn.metrics.pairwise as smp
 from sklearn.preprocessing import minmax_scale
+import time as time
 plt.style.use('ggplot')
 
 
@@ -67,6 +68,7 @@ def get_adjacency(embeddings, metric, graph_type, graph_param, metric_param2=1):
         lshf = neighbors.LSHForest()
         lshf.fit(embeddings)
         if graph_param == "opt":
+            print("coucou")
             # Choosing epsilon such that the graph is safely connected
             graph_param = opt_epsilon(embeddings, metric, metric_param2)
         adjacency = lshf.radius_neighbors_graph(embeddings, graph_param, mode='distance').toarray()
@@ -79,18 +81,19 @@ def get_graph(adjacency):
     graph = nx.from_numpy_matrix(adjacency)
     return graph
 
-# dir = 'embeddings/Word2Vec'
-# for filename in [dir+'/Word2Vec_window_half_size=2_d=50.gz', dir+'/Word2Vec_window_half_size=2_d=200.gz',
-#                  dir+'/Word2Vec_window_half_size=5_d=50.gz', dir+'/Word2Vec_window_half_size=5_d=200.gz']:
+# dir = 'embeddings/GloVe'
+# for filename in [dir+'/GloVe_window_half_size=2_d=50.gz', dir+'/GloVe_window_half_size=2_d=200.gz',
+#                  dir+'/GloVe_window_half_size=5_d=50.gz', dir+'/GloVe_window_half_size=5_d=200.gz']:
 #     [voc, emb] = load_embeddings(filename)
 #     debut = time.time()
-#     k = int(np.floor(np.log(emb.shape[0])))
-#     #eps = np.percentile(smp.cosine_distances(emb), 25)
-#     graph = get_graph(get_adjacency(emb, "cosine", "lsh_knn", k))
+#     #k = int(np.floor(np.log(emb.shape[0])))
+#     eps = np.percentile(smp.cosine_distances(emb), 0.05)
+#     print(eps)
+#     print(type(eps))
+#     graph = get_graph(get_adjacency(emb, "cosine", "lsh_eps", eps))
 #     labels = {ind: voc[ind] for ind in range(len(voc))}
 #     graph = nx.relabel_nodes(graph, labels)
-#     nx.write_graphml(graph, filename + '_lsh_opt_knn.graphml')
+#     nx.write_graphml(graph, filename + '_lsh_eps.graphml')
 #     fin = time.time()
 #     t = fin - debut
 #     print("Done for ", filename, " in ", t)
-#
