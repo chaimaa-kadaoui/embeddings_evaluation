@@ -299,11 +299,11 @@ if __name__ == "__main__":
     dims = ['50', '200']
     emb_names = ['GloVe', 'HPCA', 'Word2Vec']
 
-    # all_coeffs = pd.DataFrame([])
-    # all_commu = pd.DataFrame([])
+    all_coeffs = pd.DataFrame([])
+    all_commu = pd.DataFrame([])
     dir = 'graphs_knn_5'
     # degree_analysis(half_sizes, dims, emb_names, dir)
-    centrality_analysis(half_sizes, dims, emb_names, dir)
+    # centrality_analysis(half_sizes, dims, emb_names, dir)
 
     results = pd.DataFrame([])
     top_words = pd.DataFrame([])
@@ -313,13 +313,17 @@ if __name__ == "__main__":
             for name in emb_names:
                 key = '_'.join([name, half_size, dim])
                 print(key)
-                graph = nx.read_graphml(path.join("graphs_lsh_opt_knn", key + ".graphml"))
+                graph = nx.read_graphml(path.join("graphs_lsh_eps", key + ".graphml"))
                 nb_comp = len(list(nx.connected_components(graph)))
                 results.loc[key, "nb_comp"] = nb_comp
                 diam = diameter(graph)
                 results.loc[key, "diameter"] = diam
                 coeffs = coefficients(graph, key)
                 results.loc[key, "clustering_coeff"] = coeffs
+                weights = nx.get_edge_attributes(graph, 'weight')
+                edges = [edge for edge, val in weights.items() if val < 0]
+                graph.remove_edges_from(edges)
+
                 commu, partition = community_detection(graph)
                 modularity = community.modularity(partition, graph)
                 results.loc[key, "nb_communities"] = commu.max()
