@@ -161,7 +161,7 @@ def centrality_analysis(half_sizes, dims, emb_names, dir):
                 #     result_csv.writerow([key, ' '])
                 #     for row in central_nodes:
                 #         result_csv.writerow(row)
-                type = 'betweenness'
+                type = 'closeness'
                 central_nodes = centrality_nx(graph, nb_nodes, type)
                 # Writing results in a .csv file
                 filename = 'centrality_' + type + '.csv'
@@ -214,6 +214,29 @@ def community_detection(graph):
     commu = np.array(list(partition.values()))
     return commu, partition
 
+def get_top_10(group):
+   top = group[["centrality", "words"]].sort_values("centrality", ascending=False)["words"]
+   top = list(top)[:10]
+   return top
+
+
+def top_words_community(graph, commus):
+    """Returns the top 10 words (by closeness centrality) for the 5 most crowded communities"""
+
+    global top_words
+    # We would like to take only the 5 most crowded communities
+    counts = pd.get_dummies(commus).cumsum().iloc[-1, :].sort_values(ascending=False)
+    top_commus = list(counts.index)[:5]
+    commu_filtered = commus[commus.isin(top_commus)]
+    indexes = list(commu_filtered.index)  # The indexes of the nodes who belong to the top 5 communities
+    # We get the degree centrality of nodes
+    centrality = nx.algorithms.centrality.closeness_centrality(graph)
+    words = np.array(list(centrality.keys()))[indexes]
+    centrality = np.array(list(centrality.values()))[indexes]
+    # We want to take the 10 most important words by community and store them in a list
+    df = pd.DataFrame([words, commu_filtered, centrality], index=["words", "community", "centrality"]).T
+    top_words[key] = df.groupby("community").apply(get_top_10).reset_index(drop=True)
+
 
 def count_communities(commu):
     """For a given embedding_dim_half_size, returns the histogram of the population of communities"""
@@ -225,30 +248,8 @@ def count_communities(commu):
         check = (histo >= 100*i)&(histo < 100*(i+1))
         if i == 9:
             check = (histo >= 100*i)
-        cnt[100*i] = check.sum()
+        cnt[100*i] = 100.0 * check.sum() / commu.max()
     return cnt
-
-
-def get_top_10(group):
-   top = group[["centrality", "words"]].sort_values("centrality", ascending=False)["words"]
-   top = list(top)[:10]
-   return top
-
-
-def top_words_community(graph, commus):
-    global top_words
-    # We would like to take only the 5 most crowded communities
-    counts = pd.get_dummies(commus).cumsum().iloc[-1, :].sort_values(ascending=False)
-    top_commus = list(counts.index)[:5]
-    commu_filtered = commus[commus.isin(top_commus)]
-    indexes = list(commu_filtered.index)  # The indexes of the nodes who belong to the top 5 communities
-    # We get the degree centrality of nodes
-    centrality = nx.algorithms.centrality.degree_centrality(graph)
-    words = np.array(list(centrality.keys()))[indexes]
-    centrality = np.array(list(centrality.values()))[indexes]
-    # We want to take the 10 most important words by community and store them in a list
-    df = pd.DataFrame([words, commu_filtered, centrality], index=["words", "community", "centrality"]).T
-    top_words[key] = df.groupby("community").apply(get_top_10).reset_index(drop=True)
 
 
 def plot_communities(all_commu):
@@ -263,7 +264,7 @@ def plot_communities(all_commu):
         cnt.plot(kind="bar", label=names)
         plt.title("Histogram of communities' size with halfsize_dim="+pars[i], size=24)
         plt.xlabel("Number of words", size=18)
-        plt.ylabel("Number of communities", size=18)
+        plt.ylabel("Percentage of communities", size=18)
         plt.legend()
         plt.savefig(path.join("results", "communities_" + pars[i] + ".png"), format="png")
         plt.close()
@@ -302,8 +303,8 @@ if __name__ == "__main__":
     all_coeffs = pd.DataFrame([])
     all_commu = pd.DataFrame([])
     dir = 'graphs_knn_5'
-    # degree_analysis(half_sizes, dims, emb_names, dir)
-    # centrality_analysis(half_sizes, dims, emb_names, dir)
+    degree_analysis(half_sizes, dims, emb_names, dir)
+    centrality_analysis(half_sizes, dims, emb_names, dir)
 
     results = pd.DataFrame([])
     top_words = pd.DataFrame([])
@@ -313,7 +314,7 @@ if __name__ == "__main__":
             for name in emb_names:
                 key = '_'.join([name, half_size, dim])
                 print(key)
-                graph = nx.read_graphml(path.join("graphs_lsh_eps", key + ".graphml"))
+                graph = nx.read_graphml(path.join("graphs_knn_5", key + ".graphml"))
                 nb_comp = len(list(nx.connected_components(graph)))
                 results.loc[key, "nb_comp"] = nb_comp
                 diam = diameter(graph)
@@ -323,7 +324,6 @@ if __name__ == "__main__":
                 weights = nx.get_edge_attributes(graph, 'weight')
                 edges = [edge for edge, val in weights.items() if val < 0]
                 graph.remove_edges_from(edges)
-
                 commu, partition = community_detection(graph)
                 modularity = community.modularity(partition, graph)
                 results.loc[key, "nb_communities"] = commu.max()
